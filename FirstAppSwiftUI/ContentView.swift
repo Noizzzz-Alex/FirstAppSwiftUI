@@ -4,66 +4,52 @@
 //
 //  Created by Александр Харлампов on 09.12.2023.
 //
-
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject var color: ObservableColor
-
+    @State private var newsArray = [News]()
+    let formatU = DateFormatter()
+    
     var body: some View {
         VStack {
-            Text("Светофор")
-            HStack {
-                RowSquare(section: color)
-            }
-        }
-        VStack {
-            Button("Change color") {
-                switch color.color {
-                case .red:
-                    color.color = .yellow
-                case .yellow:
-                    color.color = .green
-                case .green:
-                    color.color = .red
+            List(newsArray, id: \.title) { newsItem in
+                var newDate: String{
+                    formatU.dateFormat = "yyyy-MM-dd"
+                    let date = Date(timeIntervalSince1970: TimeInterval(newsItem.publicationDate))
+                    return formatU.string(from: date)
                 }
-        
+                VStack {
+                    Text("Date: \(newDate)")
+                        .multilineTextAlignment(.center)
+                    Rectangle()
+                        .frame(width: 150, height: 2)
+                        .foregroundColor(.black)
+                    Text(newsItem.title)
+                        .multilineTextAlignment(.center)
+                        .font(.title)
+                        .font(.system(size: 25))
+                    Rectangle()
+                        .frame(width: 320, height: 2)
+                        .foregroundColor(.black)
+                    Text(newsItem.bodyText == "" ? "Sorry, no data available" : newsItem.bodyText)
+                        .font(.body)
+                        .multilineTextAlignment(.leading)
+                    Rectangle()
+                        .frame(width: 320, height: 2)
+                        .foregroundColor(.black)
+                    
+                }
             }
-            .buttonStyle(.borderedProminent)
         }
-        .padding()
-    }
-}
-
-enum TraficLight {
-    case red, yellow, green
-}
-
-final class ObservableColor: ObservableObject {
-    @Published var color: TraficLight = .red
-}
-
-struct RowSquare: View {
-    @ObservedObject var section = ObservableColor()
-
-    var body: some View {
-        VStack {
-            Rectangle()
-                .frame(width: 50, height: 50)
-                .foregroundStyle(section.color == .red ? .red : .white)
-                .border(.red, width: 3)
-            Rectangle()
-                .frame(width: 50, height: 50)
-                .foregroundStyle(section.color == .yellow ? .yellow : .white)
-                .border(.yellow, width: 3)
-            Rectangle()
-                .frame(width: 50, height: 50)
-                .foregroundStyle(section.color == .green ? .green : .white)
-                .border(.green, width: 3)
+        .onAppear {
+            NetworkService().getNews { news in
+                self.newsArray = news
+            }
         }
     }
 }
+
 
 #Preview {
-    ContentView(color: ObservableColor())
+    ContentView()
 }
